@@ -1,4 +1,4 @@
-module translazy
+module github.com/kvist-no/translazy
 
 go 1.21
 
