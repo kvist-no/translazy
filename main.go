@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 )
 
-var token = os.Getenv("DEEPL_API_KEY")
+var token string
 
 func main() {
 	var sourceLanguage string
@@ -76,6 +77,14 @@ func main() {
 				Usage:       "If set, the translations will be synced using the locale:import pnpm script.",
 				Destination: &syncTranslations,
 			},
+			&cli.StringFlag{
+				Name:        "token",
+				Usage:       "The DeepL API key. If not set, the program will look for the key in the file ~/.config/translazy/token.",
+				EnvVars:     []string{"DEEPL_API_KEY"},
+				Destination: &token,
+				FilePath:    os.Getenv("HOME") + "/.config/translazy/token",
+				Required:    true,
+			},
 		},
 	}
 
@@ -127,7 +136,7 @@ func translate(text string, fromLang string, toLang string) (Translation, error)
 	responseBody := bytes.NewBuffer(postBody)
 
 	request, _ := http.NewRequest("POST", "https://api-free.deepl.com/v2/translate", responseBody)
-	request.Header.Add("Authorization", "DeepL-Auth-Key "+token)
+	request.Header.Add("Authorization", "DeepL-Auth-Key "+strings.TrimSpace(token))
 	request.Header.Add("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -140,6 +149,10 @@ func translate(text string, fromLang string, toLang string) (Translation, error)
 	// parse response body to expected type
 	var translation DeepLAPIOutput
 	_ = json.NewDecoder(response.Body).Decode(&translation)
+
+	if len(translation.Translations) == 0 {
+		return Translation{}, fmt.Errorf("no translations found")
+	}
 
 	return Translation{
 		Text: translation.Translations[0].Text,
