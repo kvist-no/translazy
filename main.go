@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/urfave/cli/v2"
 	"log"
 	"net/http"
@@ -45,6 +46,8 @@ func main() {
 				syncPnpmLocales()
 			}
 
+			outputResults(translationKey, translations)
+
 			return nil
 		},
 		Flags: []cli.Flag{
@@ -78,6 +81,13 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func outputResults(translationKey string, translations []Translation) {
+	fmt.Printf("Translations done for key \"%s\"\n", translationKey)
+	for _, translation := range translations {
+		fmt.Printf("  %s: %s\n", translation.Lang, translation.Text)
 	}
 }
 
